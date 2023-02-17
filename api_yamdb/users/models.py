@@ -1,8 +1,9 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.conf import settings
-from django.contrib.auth.validators import UnicodeUsernameValidator
+# from django.contrib.auth.validators import UnicodeUsernameValidator
 from users.utils import username_validate
+
 
 class User(AbstractUser):
     """Кастомная модель пользователя унаследованная от AbstractUser
@@ -48,7 +49,7 @@ class User(AbstractUser):
         'Код подтверждения',
         max_length=settings.MAX_CODE_LENGTH,
         blank=True
-        #unique=True,
+        # unique=True,
     )
     # Роль пользоватетля
     role = models.CharField(

@@ -1,28 +1,70 @@
-from django.shortcuts import render
-from rest_framework.response import Response
-from rest_framework import viewsets
-from rest_framework import filters
-from rest_framework import mixins, status
-from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework_simplejwt.tokens import AccessToken
-from users.permissions import IsOwner, IsAdminOrSuperAdmin
+from api.filters import TitleFilter
+# from django.conf import settings
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status, viewsets
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.filters import SearchFilter
+# from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import AccessToken
+from reviews.models import Category, Genre, Review, Title
 from users.models import User
-from django.conf import settings
-from rest_framework.exceptions import ValidationError
+from users.permissions import IsAdminOrSuperAdmin
+from users.utils import (get_unique_confirmation_code,
+                         sent_email_with_confirmation_code)
 
-from users.utils import (
-    get_unique_confirmation_code,
-    sent_email_with_confirmation_code,
-)
+from .mixins import ModelMixinSet
+from .permissions import IsAdminUserOrReadOnly
+from .serializers import (AdminOrSuperAdminUserSerializer, CategorySerializer,
+                          CommentSerializer, GenreSerializer, ReviewSerializer,
+                          SignUpSerializer, TitleReadSerializer,
+                          TitleWriteSerializer, TokenSerializer,
+                          UserSerializer)
 
-from api.serialisers import (
-    UserSerializer,
-    AdminOrSuperAdminUserSerializer,
-    SignUpSerializer,
-    TokenSerializer,
-)
+
+class CategoryViewSet(ModelMixinSet):
+    """
+    Получить список всех категорий. Права доступа: Доступно без токена
+    """
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = (IsAdminUserOrReadOnly,)
+    filter_backends = (SearchFilter, )
+    search_fields = ('name', )
+    lookup_field = 'slug'
+
+
+class GenreViewSet(ModelMixinSet):
+    """
+    Получить список всех жанров. Права доступа: Доступно без токена
+    """
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    permission_classes = (IsAdminUserOrReadOnly,)
+    filter_backends = (SearchFilter,)
+    search_fields = ('name', )
+    lookup_field = 'slug'
+
+
+class TitleViewSet(ModelViewSet):
+    """
+    Получить список всех объектов. Права доступа: Доступно без токена
+    """
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')
+    ).all()
+    permission_classes = (IsAdminUserOrReadOnly,)
+    filter_backends = (DjangoFilterBackend, )
+    filterset_class = TitleFilter
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return TitleReadSerializer
+        return TitleWriteSerializer
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -31,11 +73,10 @@ class UserViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes=[IsAuthenticated, IsAdminOrSuperAdmin]
+    permission_classes = [IsAuthenticated, IsAdminOrSuperAdmin]
     lookup_field = 'username'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
-
 
     def get_serializer_class(self):
         """выбор сериализатора в зависимости от типа пользователя"""
@@ -47,15 +88,14 @@ class UserViewSet(viewsets.ModelViewSet):
             return UserSerializer
         return AdminOrSuperAdminUserSerializer
 
-
     @action(methods=['get', 'patch'],
             detail=False,
-            permission_classes=[IsAuthenticated,],
-    )
+            permission_classes=[IsAuthenticated],
+            )
     def me(self, request):
         """Добавление users/me для получения и изменении информации в
         своем профиле"""
-    
+
         user = get_object_or_404(User, id=request.user.id)
 
         if request.method == 'GET':
@@ -67,7 +107,8 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response("Не допустимы тип запроса", status=status.HTTP_400_BAD_REQUEST)
+        return Response("Не допустимы тип запроса",
+                        status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
@@ -79,17 +120,18 @@ def SignUpView(request):
         # Создаём объект сериализатора
         # и передаём в него данные из POST-запроса
         serializer = SignUpSerializer(data=request.data, many=False)
-        #serializer.is_valid(raise_exception=True)
+        # serializer.is_valid(raise_exception=True)
         # Если полученные данные валидны —
-        #user_email = serializer.validated_data['email']
-        #username = serializer.validated_data['username']
+        # user_email = serializer.validated_data['email']
+        # username = serializer.validated_data['username']
 
-        #serializer.save()
+        # serializer.save()
         is_user = User.objects.filter(
             username=request.data.get('username'),
             email=request.data.get('email'))
         if is_user.exists():
-            return Response('У вас уже есть регистрация', status=status.HTTP_200_OK)
+            return Response('У вас уже есть регистрация',
+                            status=status.HTTP_200_OK)
         # Формируем код подтверждения
         serializer.is_valid(raise_exception=True)
         # Если полученные данные валидны —
@@ -97,7 +139,8 @@ def SignUpView(request):
         username = serializer.validated_data['username']
         serializer.is_valid(raise_exception=True)
         if username == 'me':
-            return Response('Задайте другое имя', status=status.HTTP_400_BAD_REQUEST)
+            return Response('Задайте другое имя',
+                            status=status.HTTP_400_BAD_REQUEST)
         confirm_code = get_unique_confirmation_code()
         # После успешного сохранения
         user, _created = User.objects.get_or_create(

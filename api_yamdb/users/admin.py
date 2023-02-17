@@ -1,6 +1,7 @@
 from django.contrib import admin
 from users.models import User
 
+
 # Register your models here.
 class UserAdmin(admin.ModelAdmin):
     """Кастомный пользователь в админки"""
@@ -13,5 +14,6 @@ class UserAdmin(admin.ModelAdmin):
         'email'
     )
     search_fields = ('username',)
+
 
 admin.site.register(User, UserAdmin)

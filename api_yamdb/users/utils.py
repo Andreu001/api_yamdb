@@ -1,9 +1,10 @@
+import re
 from hashlib import sha1
 from random import choice
 from string import ascii_lowercase
+
 from django.conf import settings
 from django.core.mail import send_mail
-import re
 from rest_framework.exceptions import ValidationError
 
 
@@ -12,10 +13,10 @@ def username_validate(name):
     regex = re.compile(r'^[\w.@+-]+')
     if not regex.match(name):
         raise ValidationError(
-                f'Не допустимые символы в имени',
-                f'Имя может содержать только буквы, цифры и',
-                f'символы @/./+/-/_ '
-            )
+            'Не допустимые символы в имени',
+            'Имя может содержать только буквы, цифры и',
+            'символы @/./+/-/_ '
+        )
 
 
 def get_unique_confirmation_code():
