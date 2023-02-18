@@ -65,7 +65,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         title_id = self.context['view'].kwargs.get('title_id')
-        title = get_oject_or_404(Title, pk=title_id)
+        title = get_object_or_404(Title, pk=title_id)
         # проверяем, хочет ли юзер отправить запрос на создание Отзыва
         if self.context['request'].user.method == 'POST':
             # проверяем есть ли отзыв у этого произведения
