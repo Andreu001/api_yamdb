@@ -50,7 +50,7 @@ class GenreViewSet(ModelMixinSet):
     lookup_field = 'slug'
 
 
-class TitleViewSet(ModelViewSet):
+class TitleViewSet(viewsets.ModelViewSet):
     """
     Получить список всех объектов. Права доступа: Доступно без токена
     """
@@ -103,7 +103,9 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         if request.method == 'PATCH':
-            serializer = self.get_serializer(user, data=request.data, partial=True)
+            serializer = self.get_serializer(
+                user, data=request.data, partial=True
+            )
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -167,7 +169,9 @@ def TokenView(request):
         username=serializer.validated_data['username']
     )
 
-    if user.confirmation_code == serializer.validated_data['confirmation_code']:
+    if user.confirmation_code == (
+        serializer.validated_data['confirmation_code']
+    ):
         return Response(
             {'token': str(AccessToken.for_user(user))},
             status=status.HTTP_200_OK)
@@ -178,11 +182,11 @@ class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     # filter_backends = [DjangoFilterBackend]
 
-    permission_classes = []  # добавить ограничения
+    permission_classes = [IsAdminUserOrReadOnly]  # добавить ограничения
 
     def get_queryset(self):
         title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
-        return title.rewiews.all()
+        return title.reviews.all()
 
     def perform_create(self, serializer):
         title_id = self.kwargs.get('title_id')
@@ -193,7 +197,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
 
-    permission_classes = []  # добавить ограничения
+    permission_classes = [IsAdminUserOrReadOnly]  # добавить ограничения
     pagination_class = LimitOffsetPagination
 
     def get_queryset(self):

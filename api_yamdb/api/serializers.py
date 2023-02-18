@@ -1,6 +1,6 @@
 from django.conf import settings
 from rest_framework import serializers
-from rest_framework.generics import get_oject_or_404
+from rest_framework.generics import get_object_or_404
 from rest_framework.relations import SlugRelatedField
 from rest_framework.validators import UniqueValidator
 from reviews.models import Category, Comment, Genre, Review, Title
@@ -64,13 +64,15 @@ class ReviewSerializer(serializers.ModelSerializer):
     )
 
     def validate(self, data):
+        request = self.context['request']
+        author = request.user
         title_id = self.context['view'].kwargs.get('title_id')
-        title = get_oject_or_404(Title, pk=title_id)
+        title = get_object_or_404(Title, pk=title_id)
         # проверяем, хочет ли юзер отправить запрос на создание Отзыва
-        if self.context['request'].user.method == 'POST':
+        if request.method == 'POST':
             # проверяем есть ли отзыв у этого произведения
             # и принадлежит ли он автору запроса
-            if Review.object.filter(title=title, pk=title_id):
+            if Review.objects.filter(title=title, author=author).exists():
                 raise serializers.ValidationError(
                     'Нельзя добавить больше одного отзыва'
                 )
