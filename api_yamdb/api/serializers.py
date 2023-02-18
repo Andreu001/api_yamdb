@@ -168,10 +168,6 @@ class SignUpSerializer(serializers.ModelSerializer):
             'email'
         ]
 
-    def validate(self, data):
-        username_validate(data.get('username'))
-        return data
-
     class Meta:
         model = User
         fields = [
