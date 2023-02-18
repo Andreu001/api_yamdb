@@ -1,4 +1,5 @@
-from api.views import (CommentViewSet, ReviewViewSet, SignUpView, TokenView,
+from api.views import (CategoryViewSet, CommentViewSet, GenreViewSet,
+                       ReviewViewSet, SignUpView, TitleViewSet, TokenView,
                        UserViewSet)
 from django.urls import include, path
 from rest_framework import routers
@@ -9,21 +10,16 @@ router.register(
     UserViewSet,
     basename='users'
 )
-#router.register(r'titles/(?P<title_id>\\d+)/rewiews',
-#                ReviewViewSet,
-#                basename='rewiews')
-#router.register(r'titles/(?P<title_id>\\d+)/rewiews/'
-#                r'(?P<title_id>\\d+)/comments',
-#                CommentViewSet,
-#                basename='comments')
-router.register(
-    r'titles/(?P<title_id>\d+)/reviews',
-    ReviewViewSet, basename='reviews'
-)
-router.register(
-    r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments',
-    CommentViewSet, basename='comments'
-)
+router.register('titles/(?P<title_id>\\d+)/reviews',
+                ReviewViewSet,
+                basename='reviews')
+router.register(r'titles/(?P<title_id>\d+)/reviews/'
+                r'(?P<review_id>\d+)/comments',
+                CommentViewSet,
+                basename='comments')
+router.register(r'titles', TitleViewSet)
+router.register(r'genres', GenreViewSet)
+router.register(r'categories', CategoryViewSet)
 
 urlpatterns = [
     path('v1/', include(router.urls)),

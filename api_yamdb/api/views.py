@@ -102,7 +102,9 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(user, many=False)
             return Response(serializer.data, status=status.HTTP_200_OK)
         if request.method == 'PATCH':
-            serializer = self.get_serializer(user, data=request.data, partial=True)
+            serializer = self.get_serializer(
+                user, data=request.data, partial=True
+            )
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -140,7 +142,9 @@ def SignUpView(request):
         username = serializer.validated_data['username']
         serializer.is_valid(raise_exception=True)
         if username == 'me':
-            return Response('Задайте другое имя', status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+              'Задайте другое имя', status=status.HTTP_400_BAD_REQUEST
+            )
         # Формируем код подтверждения
         confirm_code = get_unique_confirmation_code()
         user, _created = User.objects.get_or_create(
@@ -166,10 +170,11 @@ def TokenView(request):
         User,
         username=serializer.validated_data.get('username')
     )
-    if user.confirmation_code == serializer.validated_data.get(
-        'confirmation_code'):
-        refresh = RefreshToken.for_user(user)
-        return Response({'token': str(refresh.access_token)},
+    if user.confirmation_code == (
+        serializer.validated_data['confirmation_code']
+    ):
+        return Response(
+            {'token': str(AccessToken.for_user(user))},
             status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -178,11 +183,11 @@ class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     # filter_backends = [DjangoFilterBackend]
 
-    permission_classes = []  # добавить ограничения
+    permission_classes = [IsAdminUserOrReadOnly]  # добавить ограничения
 
     def get_queryset(self):
         title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
-        return title.rewiews.all()
+        return title.reviews.all()
 
     def perform_create(self, serializer):
         title_id = self.kwargs.get('title_id')
@@ -193,7 +198,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
 
-    permission_classes = []  # добавить ограничения
+    permission_classes = [IsAdminUserOrReadOnly]  # добавить ограничения
     pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
