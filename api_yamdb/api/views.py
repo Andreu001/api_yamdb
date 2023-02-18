@@ -18,7 +18,8 @@ from users.utils import (get_unique_confirmation_code,
                          sent_email_with_confirmation_code)
 
 from .mixins import ModelMixinSet
-from api.permissions import IsAdminUserOrReadOnly
+from api.permissions import (IsAdminUserOrReadOnly,
+                             AdminModeratorAuthorPermission)
 from api.serializers import (AdminOrSuperAdminUserSerializer,
                              CategorySerializer,
                              CommentSerializer, GenreSerializer,
@@ -199,16 +200,15 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
+    permission_classes = [AdminModeratorAuthorPermission]  # добавить ограничения
 
-    permission_classes = [IsAdminUserOrReadOnly]  # добавить ограничения
-    pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
         review = get_object_or_404(Review, pk=self.kwargs.get('review_id'))
         return review.comments.all()
 
     def perform_create(self, serializer):
-        review_id = self.kwargs.get('review_id')
-        title_id = self.kwargs.get('title_id')
-        review = get_object_or_404(Review, id=review_id, title=title_id)
+        review = get_object_or_404(
+            Review,
+            id=self.kwargs.get('review_id'))
         serializer.save(author=self.request.user, review=review)
