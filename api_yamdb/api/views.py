@@ -10,7 +10,7 @@ from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import AccessToken
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
 from users.permissions import IsAdminOrSuperAdmin
@@ -114,7 +114,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 @api_view(['POST'])
 @permission_classes([AllowAny,])
-def SignUpView(request):
+def signup(request):
     """Авторизация"""
 
     if request.method == 'POST':
@@ -161,7 +161,7 @@ def SignUpView(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny,])
-def TokenView(request):
+def get_token(request):
     """Отправка токена"""
 
     serializer = TokenSerializer(data=request.data)

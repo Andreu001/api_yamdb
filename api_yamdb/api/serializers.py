@@ -155,6 +155,11 @@ class AdminOrSuperAdminUserSerializer(serializers.ModelSerializer):
     def validate(self, data):
         username_validate(str(data.get('username')))
         email_validate(str(data.get('email')))
+        #role = str(data.get('role'))
+        #if  (any(role in i for i in User.CHOICE_ROLES)):
+        #        raise serializers.ValidationError(
+        #            'Задана не существующая роль'
+        #        )
         return data
 
 
