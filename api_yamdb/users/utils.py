@@ -6,6 +6,7 @@ from string import ascii_lowercase
 from django.conf import settings
 from django.core.mail import send_mail
 from rest_framework.exceptions import ValidationError
+from users.models import User
 
 
 def username_validate(name):
@@ -17,7 +18,20 @@ def username_validate(name):
             'Имя может содержать только буквы, цифры и',
             'символы @/./+/-/_ '
         )
+    if name =='me':
+        raise ValidationError(
+            'me не может быть использовано в качестве имени пользоателя'
+        )
+    if name is None or name == "":
+        raise ValidationError(
+            'имя не может быть пустым'
+        )
 
+def email_validate(value):
+    """Проверка наличия такой почты в БД"""
+
+    if User.objects.filter(email=value):
+        raise ValidationError('Такая почта уже зарегистрирована в БД')
 
 def get_unique_confirmation_code():
     """Функция генерации кода подтверждения для отправки пользователю"""

@@ -10,7 +10,7 @@ from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
 from users.permissions import IsAdminOrSuperAdmin
@@ -18,8 +18,8 @@ from users.utils import (get_unique_confirmation_code,
                          sent_email_with_confirmation_code)
 
 from .mixins import ModelMixinSet
-from .permissions import IsAdminUserOrReadOnly
-from .serializers import (AdminOrSuperAdminUserSerializer, CategorySerializer,
+from api.permissions import IsAdminUserOrReadOnly
+from api.serializers import (AdminOrSuperAdminUserSerializer, CategorySerializer,
                           CommentSerializer, GenreSerializer, ReviewSerializer,
                           SignUpSerializer, TitleReadSerializer,
                           TitleWriteSerializer, TokenSerializer,
@@ -50,7 +50,7 @@ class GenreViewSet(ModelMixinSet):
     lookup_field = 'slug'
 
 
-class TitleViewSet(ModelViewSet):
+class TitleViewSet(viewsets.ModelViewSet):
     """
     Получить список всех объектов. Права доступа: Доступно без токена
     """
@@ -112,41 +112,41 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([AllowAny,])
 def SignUpView(request):
     """Авторизация"""
 
     if request.method == 'POST':
-        # Создаём объект сериализатора
-        # и передаём в него данные из POST-запроса
-        serializer = SignUpSerializer(data=request.data, many=False)
-        # serializer.is_valid(raise_exception=True)
-        # Если полученные данные валидны —
-        # user_email = serializer.validated_data['email']
-        # username = serializer.validated_data['username']
-
-        # serializer.save()
-        is_user = User.objects.filter(
+        user_request = User.objects.filter(
             username=request.data.get('username'),
             email=request.data.get('email'))
-        if is_user.exists():
-            return Response('У вас уже есть регистрация',
-                            status=status.HTTP_200_OK)
-        # Формируем код подтверждения
+        if user_request.exists():
+            return Response(
+                'У вас уже есть регистрация',
+                 status=status.HTTP_200_OK
+            )
+        if User.objects.filter(email=request.data.get('email')):
+            return Response(
+                'Такая почта уже зарегистриована',
+                 status=status.HTTP_400_BAD_REQUEST
+            )
+        if User.objects.filter(username=request.data.get('username')):
+            return Response(
+                'Такое имя уже занято уже зарегистриовано',
+                 status=status.HTTP_400_BAD_REQUEST
+            )
+        serializer = SignUpSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        # Если полученные данные валидны —
         user_email = serializer.validated_data['email']
         username = serializer.validated_data['username']
         serializer.is_valid(raise_exception=True)
         if username == 'me':
-            return Response('Задайте другое имя',
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response('Задайте другое имя', status=status.HTTP_400_BAD_REQUEST)
+        # Формируем код подтверждения
         confirm_code = get_unique_confirmation_code()
-        # После успешного сохранения
         user, _created = User.objects.get_or_create(
             username=username,
-            email=user_email
-        )
+            email=user_email)
         user.confirmation_code = confirm_code
         user.save()
         # отправляем письмо с кодом подтверждения
@@ -157,6 +157,7 @@ def SignUpView(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny,])
 def TokenView(request):
     """Отправка токена"""
 
@@ -164,12 +165,12 @@ def TokenView(request):
     serializer.is_valid(raise_exception=True)
     user = get_object_or_404(
         User,
-        username=serializer.validated_data['username']
+        username=serializer.validated_data.get('username')
     )
-
-    if user.confirmation_code == serializer.validated_data['confirmation_code']:
-        return Response(
-            {'token': str(AccessToken.for_user(user))},
+    if user.confirmation_code == serializer.validated_data.get(
+        'confirmation_code'):
+        refresh = RefreshToken.for_user(user)
+        return Response({'token': str(refresh.access_token)},
             status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

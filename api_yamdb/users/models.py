@@ -1,8 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-# from django.contrib.auth.validators import UnicodeUsernameValidator
-from users.utils import username_validate
 
 
 class User(AbstractUser):
@@ -19,8 +17,7 @@ class User(AbstractUser):
         'Пользователь',
         max_length=150,
         unique=True,
-        help_text='До 150 символов. Используются буквы, цифры и  @/./+/-/',
-        validators=[username_validate]
+        help_text='До 150 символов. Используются буквы, цифры и  @/./+/-/'
     )
     first_name = models.CharField(
         'Имя',
@@ -48,8 +45,9 @@ class User(AbstractUser):
     confirmation_code = models.CharField(
         'Код подтверждения',
         max_length=settings.MAX_CODE_LENGTH,
+        default="0",
         blank=True
-        # unique=True,
+
     )
     # Роль пользоватетля
     role = models.CharField(
