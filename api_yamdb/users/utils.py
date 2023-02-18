@@ -13,11 +13,7 @@ def username_validate(name):
     """"""
     regex = re.compile(r'^[\w.@+-]+')
     if not regex.match(name):
-        raise ValidationError(
-            'Не допустимые символы в имени',
-            'Имя может содержать только буквы, цифры и',
-            'символы @/./+/-/_ '
-        )
+        raise ValidationError('Не допустимые символы в имени')
     if name =='me':
         raise ValidationError(
             'me не может быть использовано в качестве имени пользоателя'
