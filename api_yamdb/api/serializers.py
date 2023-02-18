@@ -6,7 +6,7 @@ from rest_framework.validators import UniqueTogetherValidator
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
 from users.utils import username_validate, email_validate
-
+from users.utils import get_unique_confirmation_code
 
 class CategorySerializer(serializers.ModelSerializer):
 
@@ -152,14 +152,22 @@ class AdminOrSuperAdminUserSerializer(serializers.ModelSerializer):
             ),
         )
 
+    def create(self, validated_data):
+        confirm_code = str(get_unique_confirmation_code)
+        return User.objects.create(
+            **validated_data,
+            confirmation_code=confirm_code
+        )
+
+
     def validate(self, data):
         username_validate(str(data.get('username')))
         email_validate(str(data.get('email')))
-        #role = str(data.get('role'))
-        #if  (any(role in i for i in User.CHOICE_ROLES)):
-        #        raise serializers.ValidationError(
-        #            'Задана не существующая роль'
-        #        )
+        role = str(data.get('role'))
+        if  (any(role in i for i in User.CHOICE_ROLES)):
+                raise serializers.ValidationError(
+                    'Задана не существующая роль'
+                )
         return data
 
 

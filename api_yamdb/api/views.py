@@ -96,7 +96,7 @@ class UserViewSet(viewsets.ModelViewSet):
         """Добавление users/me для получения и изменении информации в
         своем профиле"""
 
-        user = get_object_or_404(User, id=request.user.id)
+        user = get_object_or_404(User, pk=request.user.id)
 
         if request.method == 'GET':
             serializer = self.get_serializer(user, many=False)
