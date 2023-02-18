@@ -101,8 +101,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     username = serializers.CharField(max_length=150)
     email = serializers.EmailField(max_length=254)
-    role = serializers.CharField(max_length=15, read_only=True)
-
+    #role = serializers.CharField(max_length=15, read_only=True)
+    #role = serializers.CharField(max_length=15, default='user')
     class Meta:
         model = User
         fields = [
@@ -120,6 +120,7 @@ class UserSerializer(serializers.ModelSerializer):
                 fields=['username', 'email']
             ),
         )
+
 
     def validate(self, data):
         username_validate(str(data.get('username')))
