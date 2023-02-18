@@ -18,7 +18,6 @@ TABLES = {
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **kwargs):
         for model, csv_f in TABLES.items():
             with open(

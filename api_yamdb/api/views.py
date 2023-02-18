@@ -1,29 +1,31 @@
 from api.filters import TitleFilter
-from django.core.mail import EmailMessage
-from rest_framework.viewsets import ModelViewSet
+# from django.conf import settings
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, status, viewsets, permissions
-from rest_framework.decorators import action
+from rest_framework import filters, status, viewsets
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.filters import SearchFilter
+# from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from reviews.models import Category, Genre, Review, Title, Comment
+from rest_framework_simplejwt.tokens import AccessToken
+from reviews.models import Category, Genre, Review, Title
 from users.models import User
 from users.permissions import IsAdminOrSuperAdmin
-from rest_framework.views import APIView
+from users.utils import (get_unique_confirmation_code,
+                         sent_email_with_confirmation_code)
 
 from .mixins import ModelMixinSet
-from .permissions import (IsAdminUserOrReadOnly,
-                          AdminModeratorAuthorPermission)
-from .serializers import (AdminOrSuperAdminUserSerializer, CategorySerializer,
-                          CommentSerializer, GenreSerializer, ReviewSerializer,
-                          SignUpSerializer, TitleReadSerializer,
-                          TitleWriteSerializer, TokenSerializer,
-                          UserSerializer)
+from api.permissions import IsAdminUserOrReadOnly
+from api.serializers import (AdminOrSuperAdminUserSerializer,
+                             CategorySerializer,
+                             CommentSerializer, GenreSerializer,
+                             ReviewSerializer,
+                             SignUpSerializer, TitleReadSerializer,
+                             TitleWriteSerializer, TokenSerializer,
+                             UserSerializer)
 
 
 class CategoryViewSet(ModelMixinSet):
@@ -113,8 +115,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny,])
-def SignUpView(request):
+@permission_classes([AllowAny, ])
+def signupview(request):
     """Авторизация"""
 
     if request.method == 'POST':
@@ -124,17 +126,17 @@ def SignUpView(request):
         if user_request.exists():
             return Response(
                 'У вас уже есть регистрация',
-                 status=status.HTTP_200_OK
+                status=status.HTTP_200_OK
             )
         if User.objects.filter(email=request.data.get('email')):
             return Response(
                 'Такая почта уже зарегистриована',
-                 status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST
             )
         if User.objects.filter(username=request.data.get('username')):
             return Response(
                 'Такое имя уже занято уже зарегистриовано',
-                 status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST
             )
         serializer = SignUpSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -143,7 +145,7 @@ def SignUpView(request):
         serializer.is_valid(raise_exception=True)
         if username == 'me':
             return Response(
-              'Задайте другое имя', status=status.HTTP_400_BAD_REQUEST
+                'Задайте другое имя', status=status.HTTP_400_BAD_REQUEST
             )
         # Формируем код подтверждения
         confirm_code = get_unique_confirmation_code()
@@ -160,8 +162,8 @@ def SignUpView(request):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny,])
-def TokenView(request):
+@permission_classes([AllowAny, ])
+def tokenview(request):
     """Отправка токена"""
 
     serializer = TokenSerializer(data=request.data)
@@ -203,8 +205,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         review = get_object_or_404(Review, pk=self.kwargs.get('review_id'))
-        new_queryset = review.comments.all()
-        return new_queryset
+        return review.comments.all()
 
     def perform_create(self, serializer):
         review_id = self.kwargs.get('review_id')

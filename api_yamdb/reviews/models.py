@@ -81,7 +81,7 @@ class Title(models.Model):
         return self.name
 
 
-# Разработчик Андрей классы Отзывы и Комментарии, Рейтинг,
+# классы Отзывы и Комментарии, Рейтинг,
 class Review (models.Model):
     """Класс Отзыв. Пользователь пишет отзывы на произведения.
     Отзыв должен быть привязан к конкретному произведению,
@@ -107,7 +107,7 @@ class Review (models.Model):
             MinValueValidator(1),  # Проверка, чтоб оценка была не ниже 1.
             MaxValueValidator(10)  # Проверка, чтоб оценка была не ниже 10.
         ),
-        error_messages = {'validators': 'Оценка от 1 до 10!'}
+        error_messages={'validators': 'Оценка от 1 до 10!'}
     )
     pub_date = models.DateTimeField(
         'Дата публикации',
