@@ -102,7 +102,9 @@ class UserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(max_length=150)
     email = serializers.EmailField(max_length=254)
     #role = serializers.CharField(max_length=15, read_only=True)
-    #role = serializers.CharField(max_length=15, default='user')
+    # role только для чтения но тогда не работает изменение роли почему-то
+    # изменения должны проходить через AdminOrSuperAdminUserSerializer
+
     class Meta:
         model = User
         fields = [
