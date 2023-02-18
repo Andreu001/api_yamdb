@@ -5,7 +5,7 @@ from rest_framework.relations import SlugRelatedField
 from rest_framework.validators import UniqueTogetherValidator
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
-from users.utils import username_validate
+from users.utils import username_validate, email_validate
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -122,7 +122,7 @@ class UserSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, data):
-        username_validate(data.get('username'))
+        username_validate(str(data.get('username')))
         return data
 
 
@@ -153,7 +153,8 @@ class AdminOrSuperAdminUserSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, data):
-        username_validate(data.get('username'))
+        username_validate(str(data.get('username')))
+        email_validate(str(data.get('email')))
         return data
 
 
@@ -178,7 +179,7 @@ class SignUpSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        username_validate(data.get('username'))
+        username_validate(str(data.get('username')))
         return data
 
 
@@ -198,7 +199,7 @@ class TokenSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        username = data.get('username')
+        username = str(data.get('username'))
         confirmation_code = data.get('confirmation_code')
         if confirmation_code is None:
             raise serializers.ValidationError(
