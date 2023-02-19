@@ -9,6 +9,7 @@ from users.models import User, CHOICE_ROLES
 from users.utils import username_validate, email_validate
 from users.utils import get_unique_confirmation_code
 
+
 class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -102,7 +103,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     email = serializers.EmailField(max_length=254)
     username = serializers.CharField(max_length=150)
-    #role = serializers.CharField(max_length=15, read_only=True)
+    role = serializers.CharField(max_length=15, read_only=True)
     # role только для чтения но тогда не работает изменение роли почему-то
     # изменения должны проходить через AdminOrSuperAdminUserSerializer
 
@@ -124,10 +125,17 @@ class UserSerializer(serializers.ModelSerializer):
             ),
         )
 
+    def create(self, validated_data):
+        confirm_code = str(get_unique_confirmation_code)
+        return User.objects.create(
+            **validated_data,
+            confirmation_code=confirm_code
+        )
+
 
     def validate(self, data):
         username_validate(str(data.get('username')))
-        email_validate(str(data.get('email')))
+        # email_validate(str(data.get('email')))
         return data
 
 
@@ -163,7 +171,6 @@ class AdminOrSuperAdminUserSerializer(serializers.ModelSerializer):
             **validated_data,
             confirmation_code=confirm_code
         )
-
 
     def validate(self, data):
         username_validate(str(data.get('username')))
