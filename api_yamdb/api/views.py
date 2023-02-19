@@ -13,12 +13,11 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
-from users.permissions import IsAdminOrSuperAdmin
 from users.utils import (get_unique_confirmation_code,
                          sent_email_with_confirmation_code)
 
 from .mixins import ModelMixinSet
-from api.permissions import IsAdminUserOrReadOnly
+from api.permissions import IsAdminUserOrReadOnly, IsAdmin
 from api.serializers import (AdminOrSuperAdminUserSerializer, CategorySerializer,
                           CommentSerializer, GenreSerializer, ReviewSerializer,
                           SignUpSerializer, TitleReadSerializer,
@@ -72,10 +71,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
     http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = User.objects.all()
-    #serializer_class = UserSerializer
     serializer_class = AdminOrSuperAdminUserSerializer
-    permission_classes = [IsAuthenticated, IsAdminOrSuperAdmin]
-    #permission_classes = [IsAdminOrSuperAdmin,]
+    permission_classes = [IsAdmin,]
     lookup_field = 'username'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
@@ -83,13 +80,11 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         """выбор сериализатора в зависимости от типа пользователя"""
 
-        if (
-            self.request.user.role != 'admin'
-            or self.request.user.is_superuser
+        if(
+            self.request.method not in ('post', 'patch')
         ):
             return UserSerializer
         return AdminOrSuperAdminUserSerializer
-
 
     @action(methods=['get', 'patch'],
             detail=False,
