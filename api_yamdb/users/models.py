@@ -17,6 +17,7 @@ CHOICE_ROLES = [
 class User(AbstractUser):
     """Кастомная модель пользователя унаследованная от AbstractUser
     для расширения атрибутов пользователя"""
+
     username = models.CharField(
         'Пользователь',
         max_length=150,
@@ -53,7 +54,7 @@ class User(AbstractUser):
         blank=True
 
     )
-    # Роль пользоватетля
+    # Роль пользователя
     role = models.CharField(
         'Роль',
         max_length=15,
@@ -73,7 +74,7 @@ class User(AbstractUser):
     def is_moderator(self):
         return self.role == MODERATOR
 
-    class Meta:
+    class Metta:
         constraints = [
             models.UniqueConstraint(fields=['username', 'email'],
                                     name='unique_user')
