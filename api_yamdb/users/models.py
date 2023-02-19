@@ -3,15 +3,20 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
+USER = 'user'
+ADMIN = 'admin'
+MODERATOR = 'moderator'
+
+CHOICE_ROLES = [
+    (USER, USER),
+    (ADMIN, ADMIN),
+    (MODERATOR, MODERATOR),
+]
+
+
 class User(AbstractUser):
     """Кастомная модель пользователя унаследованная от AbstractUser
     для расширения атрибутов пользователя"""
-
-    CHOICE_ROLES = (
-        ('user', 'user'),
-        ('moderator', 'moderator'),
-        ('admin', 'admin')
-    )
 
     username = models.CharField(
         'Пользователь',
@@ -56,6 +61,18 @@ class User(AbstractUser):
         choices=CHOICE_ROLES,
         default='user'
     )
+
+    @property
+    def is_user(self):
+        return self.role == USER
+
+    @property
+    def is_admin(self):
+        return self.role == ADMIN
+
+    @property
+    def is_moderator(self):
+        return self.role == MODERATOR
 
     class Metta:
         constraints = [

@@ -10,7 +10,7 @@ from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import AccessToken
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
 from users.permissions import IsAdminOrSuperAdmin
@@ -72,8 +72,10 @@ class UserViewSet(viewsets.ModelViewSet):
 
     http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    #serializer_class = UserSerializer
+    serializer_class = AdminOrSuperAdminUserSerializer
     permission_classes = [IsAuthenticated, IsAdminOrSuperAdmin]
+    #permission_classes = [IsAdminOrSuperAdmin,]
     lookup_field = 'username'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
@@ -88,23 +90,29 @@ class UserViewSet(viewsets.ModelViewSet):
             return UserSerializer
         return AdminOrSuperAdminUserSerializer
 
+
     @action(methods=['get', 'patch'],
             detail=False,
-            permission_classes=[IsAuthenticated],
+            url_path='me',
+            permission_classes=[IsAuthenticated,],
             )
     def me(self, request):
         """Добавление users/me для получения и изменении информации в
         своем профиле"""
 
-        user = get_object_or_404(User, id=request.user.id)
+        user = get_object_or_404(User, pk=request.user.id)
 
         if request.method == 'GET':
-            serializer = self.get_serializer(user, many=False)
+            #serializer = self.get_serializer(user, many=False)
+            serializer = UserSerializer(user, many=False)
             return Response(serializer.data, status=status.HTTP_200_OK)
         if request.method == 'PATCH':
-            serializer = self.get_serializer(
+            serializer = UserSerializer(
                 user, data=request.data, partial=True
             )
+            #serializer = self.get_serializer(
+            #    user, data=request.data, partial=True
+            #)
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -114,7 +122,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 @api_view(['POST'])
 @permission_classes([AllowAny,])
-def SignUpView(request):
+def signup(request):
     """Авторизация"""
 
     if request.method == 'POST':
@@ -161,7 +169,7 @@ def SignUpView(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny,])
-def TokenView(request):
+def get_token(request):
     """Отправка токена"""
 
     serializer = TokenSerializer(data=request.data)
