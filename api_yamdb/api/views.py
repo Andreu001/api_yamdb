@@ -7,23 +7,24 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from users.utils import (get_unique_confirmation_code,
                          sent_email_with_confirmation_code)
 from rest_framework_simplejwt.tokens import AccessToken
 
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
+
 from .mixins import ModelMixinSet
 from api.permissions import (IsAdminUserOrReadOnly, IsAdmin,
                              AdminModeratorAuthorPermission)
 from api.serializers import (CategorySerializer,
                              CommentSerializer, GenreSerializer,
                              ReviewSerializer,
-                             AdminOrSuperAdminUserSerializer,
+                             UsersMeSerializer,
                              SignUpSerializer, TitleReadSerializer,
                              TitleWriteSerializer, TokenSerializer,
-                             UserSerializer,
-                             MeSerializer)
+                             UserSerializer)
 
 
 class CategoryViewSet(ModelMixinSet):
@@ -72,48 +73,35 @@ class UserViewSet(viewsets.ModelViewSet):
 
     http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = User.objects.all()
-    serializer_class = AdminOrSuperAdminUserSerializer
-    permission_classes = [IsAdmin,]
+    serializer_class = UserSerializer
+    permission_classes = (IsAuthenticated, IsAdmin)
     lookup_field = 'username'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
+ 
+   
+class UsersMeView(APIView):
+    """Вью для эндпоинта users/me/."""
 
-    def get_serializer_class(self):
-        """выбор сериализатора в зависимости от типа пользователя"""
+    permission_classes = (IsAuthenticated,)
 
-        if(
-            self.request.method not in ('post', 'patch')
-        ):
-            return UserSerializer
-        return AdminOrSuperAdminUserSerializer
+    def get(self, request):
+        """Метод GET."""
+        me = get_object_or_404(User, username=request.user.username)
+        serializer = UserSerializer(me)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(methods=['get', 'patch'],
-            detail=False,
-            url_path='me',
-            permission_classes=[IsAuthenticated,],
-            )
-    def me(self, request):
-        """Добавление users/me для получения и изменении информации в
-        своем профиле"""
-
-        user = get_object_or_404(User, pk=request.user.id)
-
-        if request.method == 'GET':
-            serializer = UserSerializer(user, many=False)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        if request.method == 'PATCH':
-            serializer = MeSerializer(
-                user, data=request.data, partial=True
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response("Не допустимы тип запроса",
-                        status=status.HTTP_400_BAD_REQUEST)
-
+    def patch(self, request):
+        """Метод PATCH."""
+        me = get_object_or_404(User, username=request.user.username)
+        serializer = UsersMeSerializer(me, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+   
 
 @api_view(['POST'])
-@permission_classes([AllowAny,])
+@permission_classes([AllowAny, ])
 def signup(request):
     """Авторизация"""
 
@@ -160,7 +148,7 @@ def signup(request):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny,])
+@permission_classes([AllowAny, ])
 def get_token(request):
     """Отправка токена"""
 
