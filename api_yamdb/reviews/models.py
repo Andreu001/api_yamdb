@@ -81,15 +81,16 @@ class Title(models.Model):
         return self.name
 
 
+# классы Отзывы и Комментарии, Рейтинг,
 class Review (models.Model):
     """Класс Отзыв. Пользователь пишет отзывы на произведения.
     Отзыв должен быть привязан к конкретному произведению,
     на которое написан отзыв"""
     title = models.ForeignKey(
         Title,
-        blank=True,
-        on_delete=models.CASCADE,
-        related_name='reviews',
+        blank=True,  # поле title необязательно к заполнению (под вопросом)
+        on_delete=models.CASCADE,  # удаление отзыва, при удалении произведения
+        related_name='reviews',  # связь отзыв-произведение
         verbose_name='Отзыв',
     )
     text = models.TextField("Здесь должен быть отзыв", unique=True)
@@ -99,11 +100,12 @@ class Review (models.Model):
         related_name='reviews',
         verbose_name='Автор'
     )
-    score = models.IntegerField(
+    # Обязательно перепроверить
+    score = models.IntegerField(  # подсчет рейтинга произведения(под вопросом)
         verbose_name='Рейтинг',
         validators=[
-            MinValueValidator(1),
-            MaxValueValidator(10)
+            MinValueValidator(1),  # Проверка, чтоб оценка была не ниже 1.
+            MaxValueValidator(10)  # Проверка, чтоб оценка была не ниже 10.
         ]
     )
     pub_date = models.DateTimeField(
@@ -117,10 +119,11 @@ class Review (models.Model):
 
     class Meta:
         ordering = ('pub_date',)
+        # Проверочное ограничение в БД
         constraints = [
             models.UniqueConstraint(
-                name='unique_review',
-                fields=['title', 'author'],
+                name='unique_review',  # уникальное имя ограничения
+                fields=['title', 'author'],  # имена столбцов, для ограничения
             ),
         ]
 
@@ -131,8 +134,8 @@ class Comment(models.Model):
     review = models.ForeignKey(
         Review,
         blank=True,
-        on_delete=models.CASCADE,
-        related_name='comments',
+        on_delete=models.CASCADE,  # удаление комментов, при удалении отзыва
+        related_name='comments',  # связь коммент-отзыв
         verbose_name='Отзыв',
     )
     text = models.TextField(
@@ -141,7 +144,7 @@ class Comment(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='comments',
+        related_name='comments',  # связь юзер коммент
         verbose_name='Пользователь',
     )
     pub_date = models.DateTimeField(

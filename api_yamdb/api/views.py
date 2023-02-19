@@ -138,12 +138,14 @@ def signup(request):
             return Response(
                 'Задайте другое имя', status=status.HTTP_400_BAD_REQUEST
             )
+        # Формируем код подтверждения
         confirm_code = get_unique_confirmation_code()
         user, _created = User.objects.get_or_create(
             username=username,
             email=user_email)
         user.confirmation_code = confirm_code
         user.save()
+        # отправляем письмо с кодом подтверждения
         sent_email_with_confirmation_code(user_email, confirm_code)
         return Response(serializer.data, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
