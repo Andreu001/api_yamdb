@@ -2,10 +2,11 @@ from django.conf import settings
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 from rest_framework.relations import SlugRelatedField
-from rest_framework.validators import UniqueValidator
+from rest_framework.validators import UniqueTogetherValidator
 from reviews.models import Category, Comment, Genre, Review, Title
-from users.models import User
-from users.utils import username_validate
+from users.models import CHOICE_ROLES, User
+from users.utils import (email_validate, get_unique_confirmation_code,
+                         username_validate)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -68,10 +69,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         author = request.user
         title_id = self.context['view'].kwargs.get('title_id')
         title = get_object_or_404(Title, pk=title_id)
-        # проверяем, хочет ли юзер отправить запрос на создание Отзыва
         if request.method == 'POST':
-            # проверяем есть ли отзыв у этого произведения
-            # и принадлежит ли он автору запроса
             if Review.objects.filter(title=title, author=author).exists():
                 raise serializers.ValidationError(
                     'Нельзя добавить больше одного отзыва'
@@ -99,89 +97,101 @@ class CommentSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор модели User для обычных пользователей - не админов"""
 
-    # username_validator = UnicodeUsernameValidator()
-
-    username = serializers.CharField(
-        max_length=150,
-        validators=[
-            UniqueValidator(queryset=User.objects.all(),
-                            message='Имя должно быть уникальным'),
-            # username_validator
-        ]
-    )
-
-    email = serializers.EmailField(
-        max_length=254,
-        validators=[
-            UniqueValidator(queryset=User.objects.all(),
-                            message='email должен быть уникальным'),
-        ]
-    )
-
-    role = serializers.CharField(max_length=15, read_only=True)
-
     class Meta:
         model = User
         fields = [
-            'username',
             'email',
+            'username',
             'first_name',
             'last_name',
             'bio',
             'role'
         ]
 
+    def create(self, validated_data):
+        confirm_code = str(get_unique_confirmation_code)
+        return User.objects.create(
+            **validated_data,
+            confirmation_code=confirm_code
+        )
+
     def validate(self, data):
-        if not username_validate(data.get('username')):
-            raise serializers.ValidationError(
-                'Не допустимые символы в имени',
-                'Имя может содержать только буквы, цифры и',
-                'символы @/./+/-/_ '
-            )
+        username_validate(str(data.get('username')))
+        email_validate(str(data.get('email')))
+        return data
+
+
+class MeSerializer(serializers.ModelSerializer):
+    """Сериализатор модели User для редактирования профайла"""
+
+    email = serializers.EmailField(max_length=254)
+    username = serializers.CharField(max_length=150)
+    role = serializers.CharField(max_length=15, read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            'email',
+            'username',
+            'first_name',
+            'last_name',
+            'bio',
+            'role'
+        ]
+
+        validators = (
+            UniqueTogetherValidator(
+                queryset=User.objects.all(),
+                fields=['username', 'email']
+            ),
+        )
+
+    def validate(self, data):
+        username_validate(str(data.get('username')))
+        email_validate(str(data.get('email')))
         return data
 
 
 class AdminOrSuperAdminUserSerializer(serializers.ModelSerializer):
     """Сериализатор модели User для пользователей админ и суперадмин.
     Этим пользователям доступно редактирование роли"""
-    # username_validator = UnicodeUsernameValidator()
 
-    username = serializers.CharField(
-        max_length=150,
-        validators=[
-            UniqueValidator(queryset=User.objects.all(),
-                            message='Имя должно быть уникальным'),
-            # username_validator
-        ]
-    )
-
-    email = serializers.EmailField(
-        max_length=254,
-        validators=[
-            UniqueValidator(queryset=User.objects.all(),
-                            message='email должен быть уникальным')
-        ]
-    )
-
-    role = serializers.CharField(max_length=15)
+    email = serializers.EmailField(max_length=254)
+    username = serializers.CharField(max_length=150)
+    role = serializers.CharField(max_length=15, default='user')
 
     class Meta:
         model = User
         fields = [
-            'username',
             'email',
+            'username',
             'first_name',
             'last_name',
             'bio',
             'role',
         ]
 
+        validators = (
+            UniqueTogetherValidator(
+                queryset=User.objects.all(),
+                fields=['username', 'email']
+            ),
+        )
+
+    def create(self, validated_data):
+        confirm_code = str(get_unique_confirmation_code)
+        return User.objects.create(
+            **validated_data,
+            confirmation_code=confirm_code
+        )
+
     def validate(self, data):
-        if not username_validate(data.get('username')):
+        username_validate(str(data.get('username')))
+        email_validate(str(data.get('email')))
+        role = str(data.get('role'))
+        if (any(role in i for i in CHOICE_ROLES)):
             raise serializers.ValidationError(
-                'Не допустимые символы в имени',
-                'Имя может содержать только буквы, цифры и',
-                'символы @/./+/-/_ '
+                'Задана не существующая роль'
             )
         return data
 
@@ -189,24 +199,15 @@ class AdminOrSuperAdminUserSerializer(serializers.ModelSerializer):
 class SignUpSerializer(serializers.ModelSerializer):
     """Сериализатор запроса авторизации"""
 
-    # username_validator = UnicodeUsernameValidator()
+    username = serializers.CharField(max_length=150)
+    email = serializers.EmailField(max_length=254)
 
-    username = serializers.CharField(
-        max_length=150,
-        validators=[
-            UniqueValidator(queryset=User.objects.all(),
-                            message='Имя должно быть уникальным'),
-            # username_validator
+    class Meta:
+        model = User
+        fields = [
+            'username',
+            'email'
         ]
-    )
-
-    email = serializers.EmailField(
-        max_length=254,
-        validators=[
-            UniqueValidator(queryset=User.objects.all(),
-                            message='email должен быть уникальным'),
-        ]
-    )
 
     class Meta:
         model = User
@@ -214,6 +215,11 @@ class SignUpSerializer(serializers.ModelSerializer):
             'username',
             'email',
         ]
+
+    def validate(self, data):
+        username_validate(str(data.get('username')))
+        email_validate(str(data.get('username')))
+        return data
 
 
 class TokenSerializer(serializers.ModelSerializer):
@@ -230,3 +236,13 @@ class TokenSerializer(serializers.ModelSerializer):
             'username',
             'confirmation_code',
         ]
+
+    def validate(self, data):
+        username = str(data.get('username'))
+        confirmation_code = data.get('confirmation_code')
+        if confirmation_code is None:
+            raise serializers.ValidationError(
+                'Код подтверждения не может быть пустым'
+            )
+        username_validate(username)
+        return data
