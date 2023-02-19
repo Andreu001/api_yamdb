@@ -101,9 +101,6 @@ class CommentSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор модели User для обычных пользователей - не админов"""
 
-    email = serializers.EmailField(max_length=254)
-    username = serializers.CharField(max_length=150)
-
     class Meta:
         model = User
         fields = [
@@ -115,20 +112,12 @@ class UserSerializer(serializers.ModelSerializer):
             'role'
         ]
 
-        validators = (
-            UniqueTogetherValidator(
-                queryset=User.objects.all(),
-                fields=['username', 'email']
-            ),
-        )
-
     def create(self, validated_data):
         confirm_code = str(get_unique_confirmation_code)
         return User.objects.create(
             **validated_data,
             confirmation_code=confirm_code
         )
-
 
     def validate(self, data):
         username_validate(str(data.get('username')))
@@ -204,10 +193,10 @@ class AdminOrSuperAdminUserSerializer(serializers.ModelSerializer):
         username_validate(str(data.get('username')))
         email_validate(str(data.get('email')))
         role = str(data.get('role'))
-        if  (any(role in i for i in CHOICE_ROLES)):
-                raise serializers.ValidationError(
-                    'Задана не существующая роль'
-                )
+        if (any(role in i for i in CHOICE_ROLES)):
+            raise serializers.ValidationError(
+                'Задана не существующая роль'
+            )
         return data
 
 
@@ -258,6 +247,6 @@ class TokenSerializer(serializers.ModelSerializer):
         if confirmation_code is None:
             raise serializers.ValidationError(
                 'Код подтверждения не может быть пустым'
-                )
+            )
         username_validate(username)
         return data

@@ -13,6 +13,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
+
 from .mixins import ModelMixinSet
 from api.permissions import (IsAdminUserOrReadOnly, IsAdmin,
                              AdminModeratorAuthorPermission)
@@ -60,7 +61,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminUserOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
-    
+
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
             return TitleReadSerializer
@@ -69,7 +70,6 @@ class TitleViewSet(viewsets.ModelViewSet):
 
 class UserViewSet(viewsets.ModelViewSet):
     """Класс для работы с пользователем(ми)"""
-    
     http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = User.objects.all()
     serializer_class = AdminOrSuperAdminUserSerializer
@@ -77,16 +77,15 @@ class UserViewSet(viewsets.ModelViewSet):
     lookup_field = 'username'
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
-    
+
     def get_serializer_class(self):
         """выбор сериализатора в зависимости от типа пользователя"""
-        
         if (
                 self.request.method not in ('post', 'patch')
         ):
             return UserSerializer
         return AdminOrSuperAdminUserSerializer
-    
+
     @action(methods=['get', 'patch'],
             detail=False,
             url_path='me',
@@ -95,9 +94,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def me(self, request):
         """Добавление users/me для получения и изменении информации в
         своем профиле"""
-        
         user = get_object_or_404(User, pk=request.user.id)
-        
         if request.method == 'GET':
             serializer = UserSerializer(user, many=False)
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -116,7 +113,6 @@ class UserViewSet(viewsets.ModelViewSet):
 @permission_classes([AllowAny, ])
 def signup(request):
     """Авторизация"""
-    
     if request.method == 'POST':
         user_request = User.objects.filter(
             username=request.data.get('username'),
@@ -154,7 +150,6 @@ def signup(request):
         user.save()
         # отправляем письмо с кодом подтверждения
         sent_email_with_confirmation_code(user_email, confirm_code)
-        
         return Response(serializer.data, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -163,7 +158,6 @@ def signup(request):
 @permission_classes([AllowAny, ])
 def get_token(request):
     """Отправка токена"""
-    
     serializer = TokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = get_object_or_404(
@@ -182,12 +176,12 @@ def get_token(request):
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     permission_classes = [AdminModeratorAuthorPermission]
-    
+
     def get_queryset(self):
         title = get_object_or_404(Title,
                                   pk=self.kwargs.get('title_id'))
         return title.reviews.all()
-    
+
     def perform_create(self, serializer):
         title_id = self.kwargs.get('title_id')
         title = get_object_or_404(Title, id=title_id)
@@ -197,12 +191,12 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
     permission_classes = [AdminModeratorAuthorPermission]
-    
+
     def get_queryset(self):
         review = get_object_or_404(Review,
                                    pk=self.kwargs.get('review_id'))
         return review.comments.all()
-    
+
     def perform_create(self, serializer):
         review = get_object_or_404(
             Review,
