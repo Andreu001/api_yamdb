@@ -1,7 +1,7 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from users.models import User
 
+from users.models import User
 from .validators import validate_year
 
 
@@ -103,10 +103,11 @@ class Review (models.Model):
     # Обязательно перепроверить
     score = models.IntegerField(  # подсчет рейтинга произведения(под вопросом)
         verbose_name='Рейтинг',
-        validators=[
+        validators=(
             MinValueValidator(1),  # Проверка, чтоб оценка была не ниже 1.
             MaxValueValidator(10)  # Проверка, чтоб оценка была не ниже 10.
-        ]
+        ),
+        error_messages={'validators': 'Оценка от 1 до 10!'}
     )
     pub_date = models.DateTimeField(
         'Дата публикации',
@@ -119,6 +120,13 @@ class Review (models.Model):
 
     class Meta:
         ordering = ('pub_date',)
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
+        constraints = [
+            models.UniqueConstraint(
+                fields=('title', 'author',),
+                name='unique review'
+            )]
 
 
 class Comment(models.Model):

@@ -2,6 +2,16 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+USER = 'user'
+ADMIN = 'admin'
+MODERATOR = 'moderator'
+
+CHOICE_ROLES = [
+    (USER, USER),
+    (ADMIN, ADMIN),
+    (MODERATOR, MODERATOR),
+]
+
 
 USER = 'user'
 ADMIN = 'admin'
@@ -19,44 +29,44 @@ class User(AbstractUser):
     для расширения атрибутов пользователя"""
 
     username = models.CharField(
-        'Пользователь',
+        verbose_name='Пользователь',
         max_length=150,
         unique=True,
         help_text='До 150 символов. Используются буквы, цифры и  @/./+/-/'
     )
     first_name = models.CharField(
-        'Имя',
+        verbose_name='Имя',
         max_length=150,
         blank=True
     )
 
     last_name = models.CharField(
-        'Фамилия',
+        verbose_name='Фамилия',
         max_length=150,
         blank=True
     )
 
     email = models.EmailField(
-        'email',
+        verbose_name='email',
         max_length=254,
         unique=True
     )
 
     bio = models.TextField(
-        'Биография',
+        verbose_name='Биография',
         blank=True
     )
 
     confirmation_code = models.CharField(
-        'Код подтверждения',
+        verbose_name='Код подтверждения',
         max_length=settings.MAX_CODE_LENGTH,
         default="0",
         blank=True
 
     )
-    # Роль пользоватетля
+    # Роль пользователя
     role = models.CharField(
-        'Роль',
+        verbose_name='Роль',
         max_length=15,
         choices=CHOICE_ROLES,
         default='user'
@@ -74,7 +84,7 @@ class User(AbstractUser):
     def is_moderator(self):
         return self.role == MODERATOR
 
-    class Metta:
+    class Meta:
         constraints = [
             models.UniqueConstraint(fields=['username', 'email'],
                                     name='unique_user')
