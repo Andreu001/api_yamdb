@@ -7,6 +7,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+
 from users.utils import (get_unique_confirmation_code,
                          sent_email_with_confirmation_code)
 from rest_framework_simplejwt.tokens import AccessToken
@@ -81,7 +82,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         """выбор сериализатора в зависимости от типа пользователя"""
         if (
-                self.request.method not in ('post', 'patch')
+             self.request.method not in ('post', 'patch')
         ):
             return UserSerializer
         return AdminOrSuperAdminUserSerializer

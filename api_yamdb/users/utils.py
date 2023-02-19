@@ -32,6 +32,7 @@ def email_validate(value):
 
 def get_unique_confirmation_code():
     """Функция генерации кода подтверждения для отправки пользователю"""
+    
     code = "".join(
         [
             choice(ascii_lowercase) for _ in range(settings.MAX_CODE_LENGTH)
@@ -42,6 +43,7 @@ def get_unique_confirmation_code():
 
 def sent_email_with_confirmation_code(to_email, code):
     """Отправка сообщения пользователю с кодом подтверждения"""
+
     subject = 'Отвчать на это письмо не нужно'
     message = (
         f'Ваш код подтверждения для регистрации: {code} '

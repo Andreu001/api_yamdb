@@ -13,6 +13,17 @@ CHOICE_ROLES = [
 ]
 
 
+USER = 'user'
+ADMIN = 'admin'
+MODERATOR = 'moderator'
+
+CHOICE_ROLES = [
+    (USER, USER),
+    (ADMIN, ADMIN),
+    (MODERATOR, MODERATOR),
+]
+
+
 class User(AbstractUser):
     """Кастомная модель пользователя унаследованная от AbstractUser
     для расширения атрибутов пользователя"""

@@ -6,8 +6,8 @@ from rest_framework.validators import UniqueTogetherValidator
 
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User, CHOICE_ROLES
-from users.utils import get_unique_confirmation_code
-from users.utils import username_validate, email_validate
+from users.utils import (email_validate, get_unique_confirmation_code,
+                          username_validate)
 
 
 class CategorySerializer(serializers.ModelSerializer):
