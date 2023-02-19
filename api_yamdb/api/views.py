@@ -1,12 +1,10 @@
 from api.filters import TitleFilter
-# from django.conf import settings
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.filters import SearchFilter
-# from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -22,7 +20,7 @@ from api.serializers import (AdminOrSuperAdminUserSerializer, CategorySerializer
                           CommentSerializer, GenreSerializer, ReviewSerializer,
                           SignUpSerializer, TitleReadSerializer,
                           TitleWriteSerializer, TokenSerializer,
-                          UserSerializer)
+                          UserSerializer, MeSerializer)
 
 
 class CategoryViewSet(ModelMixinSet):
@@ -98,16 +96,12 @@ class UserViewSet(viewsets.ModelViewSet):
         user = get_object_or_404(User, pk=request.user.id)
 
         if request.method == 'GET':
-            #serializer = self.get_serializer(user, many=False)
             serializer = UserSerializer(user, many=False)
             return Response(serializer.data, status=status.HTTP_200_OK)
         if request.method == 'PATCH':
-            serializer = UserSerializer(
+            serializer = MeSerializer(
                 user, data=request.data, partial=True
             )
-            #serializer = self.get_serializer(
-            #    user, data=request.data, partial=True
-            #)
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
