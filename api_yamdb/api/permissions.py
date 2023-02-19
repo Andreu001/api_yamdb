@@ -27,6 +27,11 @@ class AdminModeratorAuthorPermission(permissions.BasePermission):
 
 
 class IsAdmin(permissions.BasePermission):
-    """Доступ только для пользователей с ролью администратора."""
     def has_permission(self, request, view):
-        return request.user.is_admin
+        return(
+            request.user.is_authenticated and(
+                request.user.is_admin or
+                request.user.is_staff or
+                request.user.is_superuser
+            )
+        )

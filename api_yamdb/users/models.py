@@ -1,62 +1,84 @@
-from django.contrib.auth.models import AbstractUser, UserManager
+from django.conf import settings
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
-class UserRole(models.TextChoices):
-    ADMIN = 'admin'
-    MODERATOR = 'moderator'
-    USER = 'user'
+USER = 'user'
+ADMIN = 'admin'
+MODERATOR = 'moderator'
 
-   
-class UserManagerYaMDB(UserManager):
-    def create_superuser(self, username, email=None,
-                         password=None, **extra_fields):
-        extra_fields.setdefault('role', UserRole.ADMIN)
-        return super().create_superuser(username, email,
-                                        password, **extra_fields)
+CHOICE_ROLES = [
+    (USER, USER),
+    (ADMIN, ADMIN),
+    (MODERATOR, MODERATOR),
+]
 
 
 class User(AbstractUser):
     """Кастомная модель пользователя унаследованная от AbstractUser
     для расширения атрибутов пользователя"""
-    users = UserManagerYaMDB()
+
+    username = models.CharField(
+        'Пользователь',
+        max_length=150,
+        unique=True,
+        help_text='До 150 символов. Используются буквы, цифры и  @/./+/-/'
+    )
+    first_name = models.CharField(
+        'Имя',
+        max_length=150,
+        blank=True
+    )
+
+    last_name = models.CharField(
+        'Фамилия',
+        max_length=150,
+        blank=True
+    )
+
     email = models.EmailField(
-        verbose_name='E-mail',
+        'email',
         max_length=254,
         unique=True
     )
 
     bio = models.TextField(
-        verbose_name='Биография',
+        'Биография',
         blank=True
     )
 
     confirmation_code = models.CharField(
-        verbose_name='Код подтверждения',
-        max_length=20,
+        'Код подтверждения',
+        max_length=settings.MAX_CODE_LENGTH,
+        default="0",
         blank=True
 
     )
     # Роль пользователя
     role = models.CharField(
+        'Роль',
         max_length=15,
-        choices=UserRole.choices,
-        default=UserRole.USER,
-        verbose_name='Роль',
+        choices=CHOICE_ROLES,
+        default='user'
     )
 
     @property
+    def is_user(self):
+        return self.role == USER
+
+    @property
     def is_admin(self):
-        return (
-                self.role == UserRole.ADMIN
-                or self.is_staff
-                or self.is_superuser
-        )
+        return self.role == ADMIN
 
     @property
     def is_moderator(self):
-        return self.role == UserRole.MODERATOR
+        return self.role == MODERATOR
 
-    class Meta:
-        verbose_name = 'Пользователь'
-        verbose_name_plural = 'Пользователи'
+    class Metta:
+        constraints = [
+            models.UniqueConstraint(fields=['username', 'email'],
+                                    name='unique_user')
+        ]
+
+    def __str__(self) -> str:
+        return self.username
