@@ -20,8 +20,6 @@ def username_validate(name):
             'me не может быть использовано в качестве имени пользоателя'
         )
     if name is None or name == "":
-        raise ValidationError('Не допустимые символы в имени')
-    if name is None or name == "":
         raise ValidationError(
             'имя не может быть пустым'
         )
