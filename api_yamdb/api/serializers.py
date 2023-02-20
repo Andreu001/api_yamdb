@@ -113,7 +113,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         username_validate(str(data.get('username')))
-        email_validate(str(data.get('username')))
+        email_validate(str(data.get('email')))
         return data
 
 
@@ -143,7 +143,6 @@ class MeSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, data):
-        # username_validate(str(data.get('username')))
         username_validate(str(data.get('username')))
         email_validate(str(data.get('email')))
         return data
