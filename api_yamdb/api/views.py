@@ -10,6 +10,7 @@ from api.serializers import (AdminOrSuperAdminUserSerializer,
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from django.contrib.auth.tokens import default_token_generator
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.filters import SearchFilter
@@ -18,8 +19,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
-from users.utils import (get_unique_confirmation_code,
-                         sent_email_with_confirmation_code)
+from users.utils import (sent_email_with_confirmation_code)
 
 from .mixins import ModelMixinSet
 
@@ -76,7 +76,7 @@ class UserViewSet(viewsets.ModelViewSet):
     search_fields = ('username',)
 
     def get_serializer_class(self):
-        """выбор сериализатора в зависимости от типа пользователя"""
+        """выбор сериализатора в зависимости от типа запорса"""
         if (
                 self.request.method not in ('post', 'patch')
         ):
@@ -102,53 +102,44 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response("Не допустимы тип запроса",
-                        status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
 @permission_classes([AllowAny, ])
 def signup(request):
     """Авторизация"""
-    if request.method == 'POST':
-        user_request = User.objects.filter(
-            username=request.data.get('username'),
-            email=request.data.get('email'))
-        if user_request.exists():
-            return Response(
-                'У вас уже есть регистрация',
-                status=status.HTTP_200_OK
-            )
-        if User.objects.filter(email=request.data.get('email')):
-            return Response(
-                'Такая почта уже зарегистриована',
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        if User.objects.filter(username=request.data.get('username')):
-            return Response(
-                'Такое имя уже занято уже зарегистриовано',
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        serializer = SignUpSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user_email = serializer.validated_data['email']
-        username = serializer.validated_data['username']
-        serializer.is_valid(raise_exception=True)
-        if username == 'me':
-            return Response(
-                'Задайте другое имя', status=status.HTTP_400_BAD_REQUEST
-            )
-        # Формируем код подтверждения
-        confirm_code = get_unique_confirmation_code()
-        user, _created = User.objects.get_or_create(
-            username=username,
-            email=user_email)
-        user.confirmation_code = confirm_code
-        user.save()
-        # отправляем письмо с кодом подтверждения
-        sent_email_with_confirmation_code(user_email, confirm_code)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    user_request = User.objects.filter(
+        username=request.data.get('username'),
+        email=request.data.get('email'))
+    if user_request.exists():
+        return Response(
+            'У вас уже есть регистрация',
+            status=status.HTTP_200_OK
+        )
+    if User.objects.filter(email=request.data.get('email')):
+        return Response(
+            'Такая почта уже зарегистриована',
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    if User.objects.filter(username=request.data.get('username')):
+        return Response(
+            'Такое имя уже занято уже зарегистриовано',
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    serializer = SignUpSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    user_email = serializer.validated_data['email']
+    username = serializer.validated_data['username']
+    user, _created = User.objects.get_or_create(
+        username=username,
+        email=user_email)
+    user.save()
+    # Формируем код подтверждения
+    token = default_token_generator.make_token(user)
+    # отправляем письмо с кодом подтверждения
+    sent_email_with_confirmation_code(user_email, token)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])

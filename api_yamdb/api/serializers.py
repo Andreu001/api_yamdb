@@ -111,16 +111,9 @@ class UserSerializer(serializers.ModelSerializer):
             'role'
         ]
 
-    def create(self, validated_data):
-        confirm_code = str(get_unique_confirmation_code)
-        return User.objects.create(
-            **validated_data,
-            confirmation_code=confirm_code
-        )
-
     def validate(self, data):
         username_validate(str(data.get('username')))
-        email_validate(str(data.get('email')))
+        email_validate(str(data.get('username')))
         return data
 
 
@@ -150,6 +143,7 @@ class MeSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, data):
+        # username_validate(str(data.get('username')))
         username_validate(str(data.get('username')))
         email_validate(str(data.get('email')))
         return data
@@ -181,13 +175,6 @@ class AdminOrSuperAdminUserSerializer(serializers.ModelSerializer):
             ),
         )
 
-    def create(self, validated_data):
-        confirm_code = str(get_unique_confirmation_code)
-        return User.objects.create(
-            **validated_data,
-            confirmation_code=confirm_code
-        )
-
     def validate(self, data):
         username_validate(str(data.get('username')))
         email_validate(str(data.get('email')))
@@ -209,19 +196,12 @@ class SignUpSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'username',
-            'email'
-        ]
-
-    class Meta:
-        model = User
-        fields = [
-            'username',
             'email',
         ]
 
     def validate(self, data):
         username_validate(str(data.get('username')))
-        email_validate(str(data.get('username')))
+        email_validate(str(data.get('email')))
         return data
 
 
