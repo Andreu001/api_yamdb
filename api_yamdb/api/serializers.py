@@ -12,17 +12,17 @@ from users.utils import (email_validate, get_unique_confirmation_code,
 class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
-        exclude = ('id', )
         model = Category
         lookup_field = 'slug'
+        fields = 'name', 'slug'
 
 
 class GenreSerializer(serializers.ModelSerializer):
 
     class Meta:
-        exclude = ('id', )
         model = Genre
         lookup_field = 'slug'
+        fields = 'name', 'slug'
 
 
 class TitleReadSerializer(serializers.ModelSerializer):
