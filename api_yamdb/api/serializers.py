@@ -111,10 +111,13 @@ class UserSerializer(serializers.ModelSerializer):
             'role'
         ]
 
-    def validate(self, data):
-        username_validate(str(data.get('username')))
-        email_validate(str(data.get('email')))
-        return data
+    def validate_username(self, value):
+        username_validate(value)
+        return value
+
+    def validate_email(self, value):
+        email_validate(value)
+        return value
 
 
 class MeSerializer(serializers.ModelSerializer):
@@ -142,10 +145,13 @@ class MeSerializer(serializers.ModelSerializer):
             ),
         )
 
-    def validate(self, data):
-        username_validate(str(data.get('username')))
-        email_validate(str(data.get('email')))
-        return data
+    def validate_username(self, value):
+        username_validate(value)
+        return value
+
+    def validate_email(self, value):
+        email_validate(value)
+        return value
 
 
 class AdminOrSuperAdminUserSerializer(serializers.ModelSerializer):
@@ -174,9 +180,15 @@ class AdminOrSuperAdminUserSerializer(serializers.ModelSerializer):
             ),
         )
 
+    def validate_username(self, value):
+        username_validate(value)
+        return value
+
+    def validate_email(self, value):
+        email_validate(value)
+        return value
+
     def validate(self, data):
-        username_validate(str(data.get('username')))
-        email_validate(str(data.get('email')))
         role = str(data.get('role'))
         if (any(role in i for i in CHOICE_ROLES)):
             raise serializers.ValidationError(
@@ -198,10 +210,13 @@ class SignUpSerializer(serializers.ModelSerializer):
             'email',
         ]
 
-    def validate(self, data):
-        username_validate(str(data.get('username')))
-        email_validate(str(data.get('email')))
-        return data
+    def validate_username(self, value):
+        username_validate(value)
+        return value
+
+    def validate_email(self, value):
+        email_validate(value)
+        return value
 
 
 class TokenSerializer(serializers.ModelSerializer):
