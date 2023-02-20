@@ -117,16 +117,6 @@ def signup(request):
             'У вас уже есть регистрация',
             status=status.HTTP_200_OK
         )
-    if User.objects.filter(email=request.data.get('email')):
-        return Response(
-            'Такая почта уже зарегистриована',
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    if User.objects.filter(username=request.data.get('username')):
-        return Response(
-            'Такое имя уже занято уже зарегистриовано',
-            status=status.HTTP_400_BAD_REQUEST
-        )
     serializer = SignUpSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user_email = serializer.validated_data['email']
