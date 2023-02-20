@@ -11,7 +11,7 @@ from users.models import User
 
 def username_validate(name):
     """Проверка имени пользователя"""
-    """Проверка имени пользователя"""
+
     regex = re.compile(r'^[\w.@+-]+')
     if not regex.match(name):
         raise ValidationError('Не допустимые символы в имени')
@@ -21,25 +21,15 @@ def username_validate(name):
         )
     if name is None or name == "":
         raise ValidationError('Не допустимые символы в имени')
-    if name == 'me':
-        raise ValidationError(
-            'me не может быть использовано в качестве имени пользоателя'
-        )
     if name is None or name == "":
         raise ValidationError(
             'имя не может быть пустым'
-            'имя не может быть пустым'
         )
 
 
 def email_validate(value):
     """Проверка наличия такой почты в БД"""
-    if User.objects.filter(email=value):
-        raise ValidationError('Такая почта уже зарегистрирована в БД')
 
-
-def email_validate(value):
-    """Проверка наличия такой почты в БД"""
     if User.objects.filter(email=value):
         raise ValidationError('Такая почта уже зарегистрирована в БД')
 
