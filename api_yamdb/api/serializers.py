@@ -10,6 +10,7 @@ from users.utils import (email_validate, get_unique_confirmation_code,
                          username_validate)
 
 
+
 class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:

@@ -1,4 +1,5 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from users.models import User
 
@@ -153,5 +154,4 @@ class Comment(models.Model):
     class Meta:
         ordering = ('pub_date',)
 
-    def __str__(self):
-        return self.text
+# Create your models here.

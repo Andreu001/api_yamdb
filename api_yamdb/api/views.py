@@ -1,27 +1,30 @@
+from api.filters import TitleFilter
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from django.contrib.auth.tokens import default_token_generator
-from rest_framework import filters, status, viewsets
+from rest_framework import status, viewsets, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from users.utils import (get_unique_confirmation_code,
+                         sent_email_with_confirmation_code)
 from rest_framework_simplejwt.tokens import AccessToken
 
-from .mixins import ModelMixinSet
-from api.filters import TitleFilter
-from api.permissions import (AdminModeratorAuthorPermission, IsAdmin,
-                             IsAdminUserOrReadOnly)
-from api.serializers import (AdminOrSuperAdminUserSerializer,
-                             CategorySerializer, CommentSerializer,
-                             GenreSerializer, MeSerializer, ReviewSerializer,
-                             SignUpSerializer, TitleReadSerializer,
-                             TitleWriteSerializer, TokenSerializer,
-                             UserSerializer)
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
-from users.utils import sent_email_with_confirmation_code
+
+from .mixins import ModelMixinSet
+from api.permissions import (IsAdminUserOrReadOnly, IsAdmin,
+                             AdminModeratorAuthorPermission)
+from api.serializers import (CategorySerializer,
+                             CommentSerializer, GenreSerializer,
+                             ReviewSerializer,
+                             AdminOrSuperAdminUserSerializer,
+                             SignUpSerializer, TitleReadSerializer,
+                             TitleWriteSerializer, TokenSerializer,
+                             UserSerializer,
+                             MeSerializer)
 
 
 class CategoryViewSet(ModelMixinSet):
@@ -102,32 +105,53 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response("Не допустимы тип запроса",
+                        status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
 @permission_classes([AllowAny, ])
 def signup(request):
     """Авторизация"""
-
-    user_request = User.objects.filter(
-        username=request.data.get('username'),
-        email=request.data.get('email'))
-    if user_request.exists():
-        return Response(
-            'У вас уже есть регистрация',
-            status=status.HTTP_200_OK
-        )
-    serializer = SignUpSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    user_email = serializer.validated_data['email']
-    username = serializer.validated_data['username']
-    user, _created = User.objects.get_or_create(
-        username=username,
-        email=user_email)
-    user.save()
-    token = default_token_generator.make_token(user)
-    sent_email_with_confirmation_code(user_email, token)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    if request.method == 'POST':
+        user_request = User.objects.filter(
+            username=request.data.get('username'),
+            email=request.data.get('email'))
+        if user_request.exists():
+            return Response(
+                'У вас уже есть регистрация',
+                status=status.HTTP_200_OK
+            )
+        if User.objects.filter(email=request.data.get('email')):
+            return Response(
+                'Такая почта уже зарегистриована',
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if User.objects.filter(username=request.data.get('username')):
+            return Response(
+                'Такое имя уже занято уже зарегистриовано',
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        serializer = SignUpSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user_email = serializer.validated_data['email']
+        username = serializer.validated_data['username']
+        serializer.is_valid(raise_exception=True)
+        if username == 'me':
+            return Response(
+                'Задайте другое имя', status=status.HTTP_400_BAD_REQUEST
+            )
+        # Формируем код подтверждения
+        confirm_code = get_unique_confirmation_code()
+        user, _created = User.objects.get_or_create(
+            username=username,
+            email=user_email)
+        user.confirmation_code = confirm_code
+        user.save()
+        # отправляем письмо с кодом подтверждения
+        sent_email_with_confirmation_code(user_email, confirm_code)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
