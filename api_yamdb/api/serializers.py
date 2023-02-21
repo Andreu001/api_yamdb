@@ -2,29 +2,27 @@ from django.conf import settings
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 from rest_framework.relations import SlugRelatedField
-from rest_framework.validators import UniqueTogetherValidator
+from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import CHOICE_ROLES, User
-from users.utils import (email_validate, get_unique_confirmation_code,
-                         username_validate)
-
+from users.utils import (email_validate, username_validate)
 
 
 class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
-        fields = 'name', 'slug'
         model = Category
         lookup_field = 'slug'
+        fields = 'name', 'slug'
 
 
 class GenreSerializer(serializers.ModelSerializer):
 
     class Meta:
-        exclude = ('id', )
         model = Genre
         lookup_field = 'slug'
+        fields = 'name', 'slug'
 
 
 class TitleReadSerializer(serializers.ModelSerializer):
@@ -144,10 +142,13 @@ class MeSerializer(serializers.ModelSerializer):
             ),
         )
 
-    def validate(self, data):
-        username_validate(str(data.get('username')))
-        email_validate(str(data.get('email')))
-        return data
+    def validate_username(self, value):
+        username_validate(value)
+        return value
+
+    def validate_email(self, value):
+        email_validate(value)
+        return value
 
 
 class AdminOrSuperAdminUserSerializer(serializers.ModelSerializer):
@@ -176,16 +177,15 @@ class AdminOrSuperAdminUserSerializer(serializers.ModelSerializer):
             ),
         )
 
-    def create(self, validated_data):
-        confirm_code = str(get_unique_confirmation_code)
-        return User.objects.create(
-            **validated_data,
-            confirmation_code=confirm_code
-        )
+    def validate_username(self, value):
+        username_validate(value)
+        return value
+
+    def validate_email(self, value):
+        email_validate(value)
+        return value
 
     def validate(self, data):
-        username_validate(str(data.get('username')))
-        email_validate(str(data.get('email')))
         role = str(data.get('role'))
         if (any(role in i for i in CHOICE_ROLES)):
             raise serializers.ValidationError(
@@ -197,20 +197,28 @@ class AdminOrSuperAdminUserSerializer(serializers.ModelSerializer):
 class SignUpSerializer(serializers.ModelSerializer):
     """Сериализатор запроса авторизации"""
 
-    username = serializers.CharField(max_length=150)
-    email = serializers.EmailField(max_length=254)
+    username = serializers.CharField(
+        max_length=150,
+        validators=[UniqueValidator(queryset=User.objects.all())]
+    ),
+    email = serializers.EmailField(
+        max_length=254,
+        validators=[UniqueValidator(queryset=User.objects.all())])
 
     class Meta:
         model = User
         fields = [
             'username',
-            'email'
+            'email',
         ]
 
-    def validate(self, data):
-        username_validate(str(data.get('username')))
-        email_validate(str(data.get('username')))
-        return data
+    def validate_username(self, value):
+        username_validate(value)
+        return value
+
+    def validate_email(self, value):
+        email_validate(value)
+        return value
 
 
 class TokenSerializer(serializers.ModelSerializer):
