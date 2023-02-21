@@ -17,7 +17,6 @@ from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework.exceptions import ValidationError
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
 from users.utils import (sent_email_with_confirmation_code)
