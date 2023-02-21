@@ -14,7 +14,7 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         lookup_field = 'slug'
-        fields = 'name', 'slug'
+        fields = ['name', 'slug']
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -22,7 +22,7 @@ class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Genre
         lookup_field = 'slug'
-        fields = 'name', 'slug'
+        fields = ['name', 'slug']
 
 
 class TitleReadSerializer(serializers.ModelSerializer):
@@ -224,27 +224,24 @@ class SignUpSerializer(serializers.ModelSerializer):
         return value
 
 
-class TokenSerializer(serializers.ModelSerializer):
+class TokenSerializer(serializers.Serializer):
     """Сериализатор получения токена по коду подтверждения"""
     username = serializers.CharField(
         max_length=150)
 
     confirmation_code = serializers.CharField(
-        max_length=settings.MAX_CODE_LENGTH)
+        max_length=settings.MAX_CODE_LENGTH, write_only=True)
 
     class Meta:
-        model = User
         fields = [
             'username',
             'confirmation_code',
         ]
 
-    def validate(self, data):
-        username = str(data.get('username'))
-        confirmation_code = data.get('confirmation_code')
-        if confirmation_code is None:
-            raise serializers.ValidationError(
-                'Код подтверждения не может быть пустым'
-            )
-        username_validate(username)
-        return data
+    def validate_username(self, value):
+        username_validate(value)
+        return value
+
+    def validate_email(self, value):
+        email_validate(value)
+        return value
