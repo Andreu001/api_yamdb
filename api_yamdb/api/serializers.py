@@ -236,12 +236,10 @@ class TokenSerializer(serializers.ModelSerializer):
             'confirmation_code',
         ]
 
-    def validate(self, data):
-        username = str(data.get('username'))
-        confirmation_code = data.get('confirmation_code')
-        if confirmation_code is None:
-            raise serializers.ValidationError(
-                'Код подтверждения не может быть пустым'
-            )
-        username_validate(username)
-        return data
+    def validate_username(self, value):
+        username_validate(value)
+        return value
+
+    def validate_email(self, value):
+        email_validate(value)
+        return value
