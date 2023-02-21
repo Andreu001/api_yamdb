@@ -14,7 +14,7 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         lookup_field = 'slug'
-        fields = ['name', 'slug']
+        fields = ('name', 'slug')
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -22,7 +22,7 @@ class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Genre
         lookup_field = 'slug'
-        fields = ['name', 'slug']
+        fields = ('name', 'slug')
 
 
 class TitleReadSerializer(serializers.ModelSerializer):
@@ -34,7 +34,13 @@ class TitleReadSerializer(serializers.ModelSerializer):
     rating = serializers.IntegerField(read_only=True)
 
     class Meta:
-        fields = '__all__'
+        fields = ('id',
+                  'name',
+                  'year',
+                  'rating',
+                  'description',
+                  'genre',
+                  'category')
         model = Title
 
 
@@ -50,17 +56,18 @@ class TitleWriteSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        fields = '__all__'
+        fields = ('id',
+                  'name',
+                  'year',
+                  'description',
+                  'genre',
+                  'category')
         model = Title
 
 
 class ReviewSerializer(serializers.ModelSerializer):
     author = SlugRelatedField(
         slug_field='username',
-        read_only=True
-    )
-    title = SlugRelatedField(
-        slug_field='name',
         read_only=True
     )
 
@@ -77,7 +84,13 @@ class ReviewSerializer(serializers.ModelSerializer):
         return data
 
     class Meta:
-        fields = '__all__'
+        fields = (
+            'id', 'text', 'author',
+            'score', 'pub_date',
+        )
+        read_only_fields = (
+            'id', 'author', 'pub_date',
+        )
         model = Review
 
 
@@ -85,12 +98,15 @@ class CommentSerializer(serializers.ModelSerializer):
     author = SlugRelatedField(
         read_only=True, slug_field='username'
     )
-    reviews = SlugRelatedField(
-        slug_field='text', read_only=True
-    )
 
     class Meta:
-        fields = '__all__'
+        fields = (
+            'id', 'text', 'author',
+            'pub_date',
+        )
+        read_only_fields = (
+            'id', 'author', 'pub_date',
+        )
         model = Comment
 
 
@@ -99,14 +115,14 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = [
+        fields = (
             'email',
             'username',
             'first_name',
             'last_name',
             'bio',
             'role'
-        ]
+        )
 
     def validate_username(self, value):
         username_validate(value)
@@ -126,14 +142,14 @@ class MeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = [
+        fields = (
             'email',
             'username',
             'first_name',
             'last_name',
             'bio',
             'role'
-        ]
+        )
 
         validators = (
             UniqueTogetherValidator(
@@ -161,14 +177,14 @@ class AdminOrSuperAdminUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = [
+        fields = (
             'email',
             'username',
             'first_name',
             'last_name',
             'bio',
             'role',
-        ]
+        )
 
         validators = (
             UniqueTogetherValidator(
@@ -207,10 +223,10 @@ class SignUpSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = [
+        fields = (
             'username',
             'email',
-        ]
+        )
 
     def validate_username(self, value):
         username_validate(value)
@@ -221,16 +237,15 @@ class SignUpSerializer(serializers.ModelSerializer):
         return value
 
 
-class TokenSerializer(serializers.ModelSerializer):
+class TokenSerializer(serializers.Serializer):
     """Сериализатор получения токена по коду подтверждения"""
     username = serializers.CharField(
         max_length=150)
 
     confirmation_code = serializers.CharField(
-        max_length=settings.MAX_CODE_LENGTH)
+        max_length=settings.MAX_CODE_LENGTH, write_only=True)
 
     class Meta:
-        model = User
         fields = [
             'username',
             'confirmation_code',

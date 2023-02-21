@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -46,14 +45,6 @@ class User(AbstractUser):
         blank=True
     )
 
-    confirmation_code = models.CharField(
-        verbose_name='Код подтверждения',
-        max_length=settings.MAX_CODE_LENGTH,
-        default="0",
-        blank=True
-
-    )
-    # Роль пользователя
     role = models.CharField(
         verbose_name='Роль',
         max_length=15,
